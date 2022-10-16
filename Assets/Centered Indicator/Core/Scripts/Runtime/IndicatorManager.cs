@@ -1,0 +1,201 @@
+﻿using UnityEngine;
+using System.Collections.Generic;
+using System.Linq;
+
+public class IndicatorManager : MonoBehaviour 
+{
+    #region SERIALIZE FIELDS
+    [Header("Settings")]
+    [SerializeField] private bool useFrameDelay;
+    [SerializeField, Range(1, 15)] private int frameCheckRate = 5;
+
+    [Header("References")]
+    [SerializeField] private IndicatorUIBase indicatorUIPrefab;
+    [SerializeField] private Transform indicatorPanel;
+    [SerializeField] private IndicatorPanelDictionary customPanels;
+
+    [System.Serializable]
+    public class IndicatorPanelDictionary : SerializableDictionary<string, RectTransform> { }
+    #endregion
+
+    #region FIELDS
+    /// <summary>
+    /// 
+    /// </summary>
+    private Dictionary<int, BaseIndicatorData> runtimeIndicators = new Dictionary<int, BaseIndicatorData>();
+
+    /// <summary>
+    /// 
+    /// </summary>
+    private int currentFrameRate = 0;
+
+    /// <summary>
+    /// 
+    /// </summary>
+    private int registerCount;
+    #endregion
+
+    #region UNITY METHODS
+    /// <summary>
+    /// 
+    /// </summary>
+    private void Update()
+    {
+        if (runtimeIndicators.Count < 1)
+        {
+            currentFrameRate = 0;
+            return;
+        }
+        if (useFrameDelay)
+        {
+            if(currentFrameRate == 0)
+            {
+                UpdateIndicators();
+            }
+            currentFrameRate = (currentFrameRate + 1) % frameCheckRate;
+            return;
+        }
+        UpdateIndicators();
+    }
+    #endregion
+
+    #region METHODS
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="info"></param>
+    public int RegisterIndicator(BaseIndicatorData info)
+    {
+        int ID = registerCount;
+        info.runtimeUI = SpawnIndicatorUI(info);
+        runtimeIndicators.Add(ID, info);
+        UpdateIndicator(runtimeIndicators[ID]);
+        registerCount++;
+        return ID;
+    }
+
+    public void ReplaceIndicator(int ID, BaseIndicatorData info)
+    {
+        if (runtimeIndicators.ContainsKey(ID))
+        {
+            if (runtimeIndicators[ID].uiPrefab != info.uiPrefab)
+            {
+                runtimeIndicators[ID].runtimeUI.Destroy();
+                runtimeIndicators[ID].runtimeUI = SpawnIndicatorUI(info);
+            }
+            else
+            {
+                runtimeIndicators[ID].runtimeUI?.Show(info);
+            }
+        }
+        else
+        {
+            RegisterIndicator(info);
+        }
+    }
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="sender"></param>
+    public void RemoveIndicator(int ID)
+    {
+        if (runtimeIndicators.ContainsKey(ID))
+        {
+            runtimeIndicators[ID].runtimeUI.Destroy();
+            runtimeIndicators.Remove(ID);
+        }
+    }
+
+
+    /// <summary>
+    /// 
+    /// </summary>
+    void UpdateIndicators()
+    {
+        if (runtimeIndicators.Count < 1) return;
+        //
+        foreach (BaseIndicatorData indicator in runtimeIndicators.Values)
+        {
+            UpdateIndicator(indicator);
+        }
+    }
+
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="indicator"></param>
+    private float distance;
+    private void UpdateIndicator(BaseIndicatorData indicator)
+    {
+        if (indicator.runtimeUI == null) return;
+        //
+        Transform playerPos = Camera.main.transform;
+        if (indicator.checkDistance)
+        {
+            distance = Vector3.Distance(playerPos.position, indicator.targetPosition);
+            indicator.runtimeUI.UpdateDistance(distance);
+            if (!indicator.runtimeUI.IsVisible())
+            {
+                return;
+            }
+        }
+
+        //
+        Vector3 forward = playerPos.forward;
+        Vector3 rhs = indicator.targetPosition - playerPos.position;
+
+        rhs.y = 0f;
+        rhs.Normalize();
+
+        float angle = Vector3.Angle(rhs, forward);
+        Vector3 Perpendicular = Vector3.Cross(forward, rhs);
+        float dot = -Vector3.Dot(Perpendicular, playerPos.up);
+        angle = AngleCircumference(dot, angle);
+
+        indicator.runtimeUI.SetAngle(angle, false, 15);
+    }
+    #endregion
+
+    #region FUNCTIONS
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="info"></param>
+    /// <returns></returns>
+    public IndicatorUIBase SpawnIndicatorUI(BaseIndicatorData info)
+    {
+        IndicatorUIBase ui = Instantiate(info.uiPrefab != null ? info.uiPrefab : indicatorUIPrefab, (!string.IsNullOrEmpty(info.panelID) && customPanels.ContainsKey(info.panelID)) ? customPanels[info.panelID] : indicatorPanel);
+        ui.Show(info);
+        return ui;
+    }
+
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="dot"></param>
+    /// <param name="angle"></param>
+    /// <returns></returns>
+    public const float circumference = 360f;
+    public static float AngleCircumference(float dot, float angle)
+    {
+        if (dot < 0)
+        {
+            angle = circumference - angle;
+        }
+        return angle;
+    }
+    #endregion
+
+    private static IndicatorManager _instance = null;
+    public static IndicatorManager Instance
+    {
+        get
+        {
+            if(_instance == null)
+            {
+                _instance = FindObjectOfType<IndicatorManager>();
+            }
+            return _instance;
+        }
+    }
+}

@@ -22,6 +22,11 @@ public class IndicatorManager : MonoBehaviour
     /// <summary>
     /// 
     /// </summary>
+    public Transform LocalPlayer { get; set; }
+
+    /// <summary>
+    /// 
+    /// </summary>
     private Dictionary<int, BaseIndicatorData> runtimeIndicators = new Dictionary<int, BaseIndicatorData>();
 
     /// <summary>
@@ -124,32 +129,32 @@ public class IndicatorManager : MonoBehaviour
     /// 
     /// </summary>
     /// <param name="indicator"></param>
-    private float distance;
+    private float distance, angle, dot;
+    private Vector3 forward, rhs, Perpendicular;
+
     private void UpdateIndicator(BaseIndicatorData indicator)
     {
         if (indicator.runtimeUI == null) return;
         //
-        Transform playerPos = Camera.main.transform;
         if (indicator.checkDistance)
         {
-            distance = Vector3.Distance(playerPos.position, indicator.targetPosition);
+            distance = Vector3.Distance(LocalPlayer.position, indicator.targetPosition);
             indicator.runtimeUI.UpdateDistance(distance);
             if (!indicator.runtimeUI.IsVisible())
             {
                 return;
             }
         }
-
         //
-        Vector3 forward = playerPos.forward;
-        Vector3 rhs = indicator.targetPosition - playerPos.position;
+        forward = LocalPlayer.forward;
+        rhs = indicator.targetPosition - LocalPlayer.position;
 
         rhs.y = 0f;
         rhs.Normalize();
 
-        float angle = Vector3.Angle(rhs, forward);
-        Vector3 Perpendicular = Vector3.Cross(forward, rhs);
-        float dot = -Vector3.Dot(Perpendicular, playerPos.up);
+        angle = Vector3.Angle(rhs, forward);
+        Perpendicular = Vector3.Cross(forward, rhs);
+        dot = -Vector3.Dot(Perpendicular, LocalPlayer.up);
         angle = AngleCircumference(dot, angle);
 
         indicator.runtimeUI.SetAngle(angle, false, 15);

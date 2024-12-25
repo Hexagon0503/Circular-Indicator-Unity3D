@@ -3,6 +3,7 @@ using UnityEngine;
 [System.Serializable]
 public class DamageIndicatorData
 {
+    #region PROPERTIES
     /// <summary>
     /// 
     /// </summary>
@@ -26,8 +27,10 @@ public class DamageIndicatorData
     /// <summary>
     /// 
     /// </summary>
-    public BaseIndicatorData indicatorData { get; set; }
+    public BaseIndicatorData IndicatorData { get; set; }
+    #endregion
 
+    #region CONSTRUCT
     /// <summary>
     /// 
     /// </summary>
@@ -47,4 +50,5 @@ public class DamageIndicatorData
     public DamageIndicatorData()
     {
     }
+    #endregion
 }

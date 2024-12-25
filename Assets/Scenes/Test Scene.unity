@@ -450,6 +450,14 @@ PrefabInstance:
       propertyPath: m_Name
       value: Radial Indicator
       objectReference: {fileID: 0}
+    - target: {fileID: 11400018, guid: 9a8c4938f4468294ea58e3f22fefaec9, type: 3}
+      propertyPath: LocalPlayer
+      value: 
+      objectReference: {fileID: 2112691027}
+    - target: {fileID: 11400018, guid: 9a8c4938f4468294ea58e3f22fefaec9, type: 3}
+      propertyPath: useFrameDelay
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 22400002, guid: 9a8c4938f4468294ea58e3f22fefaec9, type: 3}
       propertyPath: m_Pivot.x
       value: 0.5
@@ -460,7 +468,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 22400002, guid: 9a8c4938f4468294ea58e3f22fefaec9, type: 3}
       propertyPath: m_RootOrder
-      value: 4
+      value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 22400002, guid: 9a8c4938f4468294ea58e3f22fefaec9, type: 3}
       propertyPath: m_AnchorMax.x

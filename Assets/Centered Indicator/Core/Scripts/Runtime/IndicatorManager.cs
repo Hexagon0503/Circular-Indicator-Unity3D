@@ -7,37 +7,32 @@ public class IndicatorManager : MonoBehaviour
     #region SERIALIZE FIELDS
     [Header("Settings")]
     [SerializeField] private bool useFrameDelay;
-    [SerializeField, Range(1, 15)] private int frameCheckRate = 5;
+    [SerializeField, Range(1, 15)] private int frameDelayRate = 5;
 
     [Header("References")]
     [SerializeField] private IndicatorUIBase indicatorUIPrefab;
     [SerializeField] private Transform indicatorPanel;
-    [SerializeField] private IndicatorPanelDictionary customPanels;
+    [SerializeField] private SerializableDictionary<string, RectTransform> customPanels;
+    #endregion
 
-    [System.Serializable]
-    public class IndicatorPanelDictionary : SerializableDictionary<string, RectTransform> { }
+    #region PROPERTIES
+    /// <summary>
+    /// 
+    /// </summary>
+    public Transform LocalPlayer;
     #endregion
 
     #region FIELDS
     /// <summary>
     /// 
     /// </summary>
-    public Transform LocalPlayer { get; set; }
+    private Dictionary<int, BaseIndicatorData> indicatorData_Dic = new Dictionary<int, BaseIndicatorData>();
 
-    /// <summary>
-    /// 
-    /// </summary>
-    private Dictionary<int, BaseIndicatorData> runtimeIndicators = new Dictionary<int, BaseIndicatorData>();
 
     /// <summary>
     /// 
     /// </summary>
     private int currentFrameRate = 0;
-
-    /// <summary>
-    /// 
-    /// </summary>
-    private int registerCount;
     #endregion
 
     #region UNITY METHODS
@@ -46,7 +41,7 @@ public class IndicatorManager : MonoBehaviour
     /// </summary>
     private void Update()
     {
-        if (runtimeIndicators.Count < 1)
+        if (indicatorData_Dic.Count < 1)
         {
             currentFrameRate = 0;
             return;
@@ -57,40 +52,44 @@ public class IndicatorManager : MonoBehaviour
             {
                 UpdateIndicators();
             }
-            currentFrameRate = (currentFrameRate + 1) % frameCheckRate;
+            currentFrameRate = (currentFrameRate + 1) % frameDelayRate;
             return;
         }
         UpdateIndicators();
     }
     #endregion
-
-    #region METHODS
+     
+    #region METHODS [INDICATORS]
     /// <summary>
     /// 
     /// </summary>
     /// <param name="info"></param>
     public int RegisterIndicator(BaseIndicatorData info)
     {
-        int ID = registerCount;
+        int ID = info.GetHashCode();
         info.runtimeUI = SpawnIndicatorUI(info);
-        runtimeIndicators.Add(ID, info);
-        UpdateIndicator(runtimeIndicators[ID]);
-        registerCount++;
+        indicatorData_Dic.Add(ID, info);
+        UpdateIndicator(indicatorData_Dic[ID]);
         return ID;
     }
 
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="ID"></param>
+    /// <param name="info"></param>
     public void ReplaceIndicator(int ID, BaseIndicatorData info)
     {
-        if (runtimeIndicators.ContainsKey(ID))
+        if (indicatorData_Dic.ContainsKey(ID))
         {
-            if (runtimeIndicators[ID].uiPrefab != info.uiPrefab)
+            if (indicatorData_Dic[ID].uiPrefab != info.uiPrefab)
             {
-                runtimeIndicators[ID].runtimeUI.Destroy();
-                runtimeIndicators[ID].runtimeUI = SpawnIndicatorUI(info);
+                indicatorData_Dic[ID].runtimeUI.Destroy();
+                indicatorData_Dic[ID].runtimeUI = SpawnIndicatorUI(info);
             }
             else
             {
-                runtimeIndicators[ID].runtimeUI?.Show(info);
+                indicatorData_Dic[ID].runtimeUI?.Show(info);
             }
         }
         else
@@ -98,16 +97,17 @@ public class IndicatorManager : MonoBehaviour
             RegisterIndicator(info);
         }
     }
+
     /// <summary>
     /// 
     /// </summary>
     /// <param name="sender"></param>
     public void RemoveIndicator(int ID)
     {
-        if (runtimeIndicators.ContainsKey(ID))
+        if (indicatorData_Dic.ContainsKey(ID))
         {
-            runtimeIndicators[ID].runtimeUI.Destroy();
-            runtimeIndicators.Remove(ID);
+            indicatorData_Dic[ID].runtimeUI.Destroy();
+            indicatorData_Dic.Remove(ID);
         }
     }
 
@@ -117,9 +117,11 @@ public class IndicatorManager : MonoBehaviour
     /// </summary>
     void UpdateIndicators()
     {
-        if (runtimeIndicators.Count < 1) return;
-        //
-        foreach (BaseIndicatorData indicator in runtimeIndicators.Values)
+        if (!LocalPlayer || indicatorData_Dic.Count < 1)
+        {
+            return;
+        }
+        foreach (BaseIndicatorData indicator in indicatorData_Dic.Values)
         {
             UpdateIndicator(indicator);
         }
@@ -134,8 +136,10 @@ public class IndicatorManager : MonoBehaviour
 
     private void UpdateIndicator(BaseIndicatorData indicator)
     {
-        if (indicator.runtimeUI == null) return;
-        //
+        if (indicator.runtimeUI == null)
+        {
+            return;
+        }
         if (indicator.checkDistance)
         {
             distance = Vector3.Distance(LocalPlayer.position, indicator.targetPosition);
@@ -156,7 +160,7 @@ public class IndicatorManager : MonoBehaviour
         Perpendicular = Vector3.Cross(forward, rhs);
         dot = -Vector3.Dot(Perpendicular, LocalPlayer.up);
         angle = AngleCircumference(dot, angle);
-
+        //
         indicator.runtimeUI.SetAngle(angle, false, 15);
     }
     #endregion
@@ -191,6 +195,10 @@ public class IndicatorManager : MonoBehaviour
     }
     #endregion
 
+    #region GETTER
+    /// <summary>
+    /// 
+    /// </summary>
     private static IndicatorManager _instance = null;
     public static IndicatorManager Instance
     {
@@ -203,4 +211,5 @@ public class IndicatorManager : MonoBehaviour
             return _instance;
         }
     }
+    #endregion
 }

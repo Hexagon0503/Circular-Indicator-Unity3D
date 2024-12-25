@@ -14,7 +14,7 @@ public class DamageIndicator : MonoBehaviour
     /// <summary>
     /// 
     /// </summary>
-    private Dictionary<DamageIndicatorType, IndicatorUIData> savedUIData;
+    private Dictionary<DamageIndicatorType, IndicatorUIData> uiData_Dic;
 
     /// <summary>
     /// 
@@ -34,7 +34,7 @@ public class DamageIndicator : MonoBehaviour
     private void Awake()
     {
         indicatorManager = IndicatorManager.Instance;
-        BuildUIDataList();
+        Initialize();
     }
     #endregion
 
@@ -42,12 +42,12 @@ public class DamageIndicator : MonoBehaviour
     /// <summary>
     /// 
     /// </summary>
-    private void BuildUIDataList()
+    private void Initialize()
     {
-        savedUIData = new Dictionary<DamageIndicatorType, IndicatorUIData>();
+        uiData_Dic = new Dictionary<DamageIndicatorType, IndicatorUIData>();
         for (int i = 0; i < indicatorUIDatas.Length; i++)
         {
-            savedUIData.Add(indicatorUIDatas[i].Type, indicatorUIDatas[i]);
+            uiData_Dic.Add(indicatorUIDatas[i].Type, indicatorUIDatas[i]);
         }
     }
 
@@ -59,24 +59,24 @@ public class DamageIndicator : MonoBehaviour
     {
         if (runtimeIndicators.ContainsKey(info.Sender))
         {
-            runtimeIndicators[info.Sender].indicatorData.targetPosition = info.Direction;
+            runtimeIndicators[info.Sender].IndicatorData.targetPosition = info.Direction;
             if (runtimeIndicators[info.Sender].Type != info.Type)
             {
-                runtimeIndicators[info.Sender].indicatorData.uiPrefab = GetUIPrefab(info.Type);
-                runtimeIndicators[info.Sender].indicatorData.panelID = savedUIData[info.Type].panelID;
+                runtimeIndicators[info.Sender].IndicatorData.uiPrefab = GetUIPrefab(info.Type);
+                runtimeIndicators[info.Sender].IndicatorData.panelID = uiData_Dic[info.Type].panelID;
             }
-            indicatorManager.ReplaceIndicator(runtimeIndicators[info.Sender].ID, runtimeIndicators[info.Sender].indicatorData);
+            indicatorManager.ReplaceIndicator(runtimeIndicators[info.Sender].ID, runtimeIndicators[info.Sender].IndicatorData);
         }
         else
         {
-            info.indicatorData = new BaseIndicatorData()
+            info.IndicatorData = new BaseIndicatorData()
             {
                 targetPosition = info.Direction,
                 uiPrefab = GetUIPrefab(info.Type),
-                panelID = savedUIData[info.Type].panelID,
+                panelID = uiData_Dic[info.Type].panelID,
                 customData = info,
             };
-            info.ID = indicatorManager.RegisterIndicator(info.indicatorData);
+            info.ID = indicatorManager.RegisterIndicator(info.IndicatorData);
             runtimeIndicators.Add(info.Sender, info);
         }
     }
@@ -103,15 +103,16 @@ public class DamageIndicator : MonoBehaviour
     /// <returns></returns>
     public IndicatorUIBase GetUIPrefab(DamageIndicatorType indicatorType)
     {
-        if(!savedUIData.ContainsKey(indicatorType))
+        if(!uiData_Dic.ContainsKey(indicatorType))
         {
             Debug.LogError($"Indicator [{indicatorType}] UI Does Not Exist!");
             return null;
         }
-        return savedUIData[indicatorType].uiPrefab;
+        return uiData_Dic[indicatorType].uiPrefab;
     }
     #endregion
 
+    #region NESTED CLASS
     [System.Serializable]
     public class IndicatorUIData
     {
@@ -119,7 +120,12 @@ public class DamageIndicator : MonoBehaviour
         public string panelID;
         public IndicatorUIBase uiPrefab;
     }
+    #endregion
 
+    #region GETTER
+    /// <summary>
+    /// 
+    /// </summary>
     private static DamageIndicator _instance = null;
     public static DamageIndicator Instance
     {
@@ -132,4 +138,5 @@ public class DamageIndicator : MonoBehaviour
             return _instance;
         }
     }
+    #endregion
 }
